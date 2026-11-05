@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Quarc Calendar</string>
+    <string name="title_activity_main">Quarc Calendar</string>
+    <string name="package_name">com.quarc.calendar</string>
+    <string name="custom_url_scheme">com.quarc.calendar</string>
+</resources>

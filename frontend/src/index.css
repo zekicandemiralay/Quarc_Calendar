@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-neutral-900 antialiased dark:bg-neutral-900 dark:text-neutral-100;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Keep native date/time pickers readable in dark mode */
+.dark input[type='date'],
+.dark input[type='time'] {
+  color-scheme: dark;
+}
+
+* {
+  scrollbar-width: thin;
+}

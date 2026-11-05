@@ -1,0 +1,9 @@
+{
+  "appId": "com.quarc.calendar",
+  "appName": "Quarc Calendar",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#121212"
+  }
+}

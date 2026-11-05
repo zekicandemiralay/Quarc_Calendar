@@ -1,0 +1,46 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - calendar_data:/app/data
+    environment:
+      - PORT=3006
+      - DB_PATH=/app/data/calendar.db
+      - JWT_SECRET=${JWT_SECRET:-insecure-default-change-in-production}
+      # Must match quarc-auth's own SECURE_COOKIE. This backend never issues
+      # the original login cookie (quarc-auth does), but it DOES re-issue a
+      # renewed one on a sliding session (see middleware/auth.js) — and a
+      # renewal signed with the wrong sameSite/secure would stop reaching the
+      # server from a cross-origin client (e.g. the Android app's WebView)
+      # that the original cookie reached just fine.
+      - SECURE_COOKIE=${SECURE_COOKIE:-true}
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4005:443"
+    volumes:
+      - /var/lib/tailscale/certs:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - app-network
+      # Lets nginx reach the quarc-auth container by name for /api/auth/*.
+      - quarcnet-shared
+
+networks:
+  app-network:
+    driver: bridge
+  quarcnet-shared:
+    external: true
+
+volumes:
+  calendar_data:
