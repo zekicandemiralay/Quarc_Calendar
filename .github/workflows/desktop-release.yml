@@ -171,6 +171,13 @@ jobs:
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > mobile/android/app/release.keystore
 
+      - name: Verify keystore, alias and password
+        working-directory: mobile/android/app
+        run: |
+          if [ ! -s release.keystore ]; then echo "::error::KEYSTORE_BASE64 secret is missing or empty"; exit 1; fi
+          keytool -list -keystore release.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" -alias quarc-calendar \
+            || { echo "::error::Keystore could not be opened: wrong KEYSTORE_PASSWORD, bad KEYSTORE_BASE64, or no key with alias quarc-calendar"; keytool -list -keystore release.keystore -storepass "${{ secrets.KEYSTORE_PASSWORD }}" || true; exit 1; }
+
       - name: Build signed release APK
         working-directory: mobile/android
         env:
