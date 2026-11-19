@@ -5,7 +5,7 @@
 //  - Static assets (hashed JS/CSS, images): cache first, refreshed in the background.
 //  - /api/ requests are never touched here. Offline data lives in IndexedDB
 //    (see src/lib/db.js), not in this cache.
-const CACHE = 'quarc-calendar-v2';
+const CACHE = 'quarc-calendar-v3';
 const SHELL = ['/', '/manifest.json', '/logo.png'];
 
 self.addEventListener('install', (event) => {
