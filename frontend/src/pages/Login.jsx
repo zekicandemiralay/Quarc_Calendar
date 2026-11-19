@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useAuthStore from '../store/authStore';
+import StoreLoginButton from '../components/StoreLoginButton';
 
 export default function Login() {
   const { t } = useTranslation();
@@ -46,6 +47,12 @@ export default function Login() {
             <p className="mt-1 text-sm text-neutral-500">{t('auth.signInToAccount')}</p>
           </div>
         </div>
+        <StoreLoginButton
+          onSignedIn={async () => {
+            await useAuthStore.getState().checkSession();
+            navigate('/');
+          }}
+        />
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input
             className={field}

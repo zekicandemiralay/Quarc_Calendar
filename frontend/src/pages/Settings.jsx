@@ -1,3 +1,4 @@
+import StorePromo from '../components/StorePromo';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -90,6 +91,7 @@ function UpdateSection() {
               {installing ? t('updates.downloading') : t('updates.install')}
             </button>
           )}
+          <StorePromo />
           {platform === 'web' && (
             <a href={release.html_url} target="_blank" rel="noopener noreferrer" className="block rounded-lg bg-neutral-100 px-3 py-2 text-center font-medium hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700">
               {t('updates.viewRelease')}

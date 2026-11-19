@@ -1,3 +1,4 @@
+import StorePromo from '../components/StorePromo';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { addDays, addMonths, addYears, endOfWeek, startOfWeek } from 'date-fns';
@@ -132,6 +133,7 @@ export default function CalendarPage() {
           >
             {t('updates.installNow')}
           </button>
+          <StorePromo compact />
           <button onClick={dismissUpdate} className="ml-2 hover:text-emerald-200" aria-label="Dismiss">✕</button>
         </div>
       )}

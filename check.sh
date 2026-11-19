@@ -20,7 +20,7 @@ for svc in backend frontend; do
   CID=$(docker ps -q --filter "label=com.docker.compose.service=${svc}" | head -1)
   [ -n "$CID" ] && ok "$svc: running" || fail "$svc: not running"
 done
-docker ps -q --filter "name=quarc-auth" | grep -q . && ok "quarc-auth: running" || fail "quarc-auth: not running (see Quarc_Notes/auth/README.md)"
+docker ps -q --filter "name=quarc-auth" | grep -q . && ok "quarc-auth: running" || fail "quarc-auth: not running (see Quarc_Store/auth/README.md)"
 
 CODE=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 5 "${BASE}/" || echo 0)
 [ "$CODE" = "200" ] && ok "HTTPS :${HTTPS_PORT} serves the app" || fail "HTTPS :${HTTPS_PORT} returned ${CODE}"

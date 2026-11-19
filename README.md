@@ -41,14 +41,14 @@ For the person who owns and runs the server. Same pattern as Quarc Notes.
 ### Requirements
 - Docker and Docker Compose
 - A machine that stays on, running [Tailscale](https://tailscale.com) with HTTPS certificates enabled
-- The shared `quarc-auth` login service running (see `Quarc_Notes/auth/README.md`)
+- The shared `quarc-auth` login service running (see `Quarc_Store/auth/README.md`)
 
 ### Install
 ```bash
 docker network create quarcnet-shared      # once per server, if not already done
 git clone https://github.com/zekicandemiralay/Quarc_Calendar.git
 cd Quarc_Calendar
-cp .env.example .env                        # set JWT_SECRET = the SAME value as auth/.env
+cp .env.example .env                        # set JWT_SECRET = the SAME value as Quarc_Store/auth/.env
 bash deploy.sh
 ```
 
@@ -64,7 +64,7 @@ bash check.sh                  # containers, HTTPS, auth, sync endpoint
 
 | Variable | Description |
 |---|---|
-| `JWT_SECRET` | Must equal `auth/.env`'s value exactly |
+| `JWT_SECRET` | Must equal `Quarc_Store/auth/.env`'s value exactly |
 | `SECURE_COOKIE` | Must match quarc-auth (default `true`) |
 
 Ports: backend `3006` (internal), public `4005`.
