@@ -112,9 +112,10 @@ Tag `vX.Y.Z` and push. The workflow needs these repository secrets for the Andro
 `KEYSTORE_BASE64` (base64 of the keystore, key alias `quarc-calendar`) and `KEYSTORE_PASSWORD`.
 
 ### Logo
-`frontend/public/logo.png`, `desktop/logo.png` and `mobile/resources/icon.png` are **placeholders**.
-When the real logo is ready, replace them and regenerate the platform icons:
+The master is `QuarcNet/logos/calendar.svg` (the shared Quarc icon style). `frontend/public/logo.png`
+(512 px), `desktop/logo.png` and `mobile/resources/icon.png` (1024 px) are exports of it. After changing
+them, regenerate the platform icons:
 ```bash
 cd desktop && npx tauri icon logo.png
-cd ../mobile && npx capacitor-assets generate --android --iconBackgroundColor '#121212' --splashBackgroundColor '#121212'
+cd ../mobile && npm run icons
 ```
