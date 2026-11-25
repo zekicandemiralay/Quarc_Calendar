@@ -51,6 +51,34 @@ export function ScopeDialog() {
 }
 
 // ---------------------------------------------------------------------------
+// "Delete …?" — asked in the app before anything that can't be undone
+// ---------------------------------------------------------------------------
+export function ConfirmDialog() {
+  const { t } = useTranslation();
+  const ask = useUi((s) => s.confirmAsk);
+  const answer = useUi((s) => s.answerConfirm);
+  if (!ask) return null;
+  return (
+    <Modal
+      title={ask.title ?? null}
+      onClose={() => answer(false)}
+      width="max-w-sm"
+      footer={
+        <>
+          {/* focused, so Enter or Space right away does not delete anything */}
+          <button autoFocus onClick={() => answer(false)} className={btnGhost}>{t('common.cancel')}</button>
+          <button onClick={() => answer(true)} className={`${btnDanger} !bg-red-600 !text-white hover:!bg-red-700`}>
+            {ask.confirmLabel || t('common.delete')}
+          </button>
+        </>
+      }
+    >
+      <p className="text-sm text-neutral-700 dark:text-neutral-300">{ask.message}</p>
+    </Modal>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Read-only event card
 // ---------------------------------------------------------------------------
 export function EventPreview() {
@@ -60,6 +88,7 @@ export function EventPreview() {
   const close = useUi((s) => s.closePreview);
   const openEditor = useUi((s) => s.openEditor);
   const askScope = useUi((s) => s.askScope);
+  const askConfirm = useUi((s) => s.askConfirm);
   if (!preview) return null;
   const { occ } = preview;
 
@@ -85,6 +114,8 @@ export function EventPreview() {
     if (base.rrule) {
       scope = await askScope('delete');
       if (!scope) return;
+    } else if (!(await askConfirm(t('event.deleteConfirm', { title: base.title || t('event.noTitle') }), { title: t('event.deleteTitle') }))) {
+      return;
     }
     await deleteWithScope({ base, scope, originalDate: occ.originalDate });
     close();

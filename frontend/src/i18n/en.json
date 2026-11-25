@@ -44,6 +44,8 @@
     "location": "Add location",
     "description": "Add description",
     "noTitle": "(No title)",
+    "deleteTitle": "Delete event",
+    "deleteConfirm": "Delete “{{title}}”? This can't be undone.",
     "calendarColor": "Calendar colour",
     "duplicate": "Duplicate",
     "duplicated": "Event duplicated",

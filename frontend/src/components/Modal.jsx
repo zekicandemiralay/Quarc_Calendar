@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import Icon from './Icons';
 
 /**
@@ -6,9 +6,11 @@ import Icon from './Icons';
  * backdrop click. `footer` sticks to the bottom so actions stay reachable.
  */
 export default function Modal({ title, onClose, children, footer, width = 'max-w-lg', labelledBy }) {
+  const root = useRef(null);
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') {
+      // Only the dialog on top answers Escape: a question over the event editor closes, the editor stays.
+      if (e.key === 'Escape' && root.current === [...document.querySelectorAll('[aria-modal="true"]')].pop()) {
         e.stopPropagation();
         onClose();
       }
@@ -18,7 +20,7 @@ export default function Modal({ title, onClose, children, footer, width = 'max-w
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+    <div ref={root} className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
       <div className="absolute inset-0 animate-fade bg-black/50" onClick={onClose} />
       <div className={`relative flex max-h-[92vh] w-full ${width} animate-pop flex-col rounded-t-2xl bg-white shadow-2xl dark:bg-neutral-900 sm:rounded-2xl dark:sm:border dark:sm:border-neutral-800`}>
         {title !== null && (

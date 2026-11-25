@@ -28,6 +28,7 @@ export default function EventEditor() {
   const editor = useUi((s) => s.editor);
   const close = useUi((s) => s.closeEditor);
   const askScope = useUi((s) => s.askScope);
+  const askConfirm = useUi((s) => s.askConfirm);
   const toast = useUi((s) => s.toast);
   const calendars = useCalendars();
 
@@ -42,6 +43,7 @@ export default function EventEditor() {
       calendars={calendars}
       close={close}
       askScope={askScope}
+      askConfirm={askConfirm}
       toast={toast}
       t={t}
       fmt={fmt}
@@ -49,7 +51,7 @@ export default function EventEditor() {
   );
 }
 
-function EditorForm({ base, occ, isNew, calendars, close, askScope, toast, t, fmt }) {
+function EditorForm({ base, occ, isNew, calendars, close, askScope, askConfirm, toast, t, fmt }) {
   const initial = useMemo(() => {
     const { s, e } = fieldTimes(base, occ);
     return {
@@ -146,6 +148,8 @@ function EditorForm({ base, occ, isNew, calendars, close, askScope, toast, t, fm
     if (base.rrule) {
       scope = await askScope('delete');
       if (!scope) return;
+    } else if (!(await askConfirm(t('event.deleteConfirm', { title: base.title || t('event.noTitle') }), { title: t('event.deleteTitle') }))) {
+      return;
     }
     await deleteWithScope({ base, scope, originalDate: occ?.originalDate });
     close();

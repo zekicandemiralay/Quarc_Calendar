@@ -44,6 +44,8 @@
     "location": "Konum ekle",
     "description": "Açıklama ekle",
     "noTitle": "(Başlıksız)",
+    "deleteTitle": "Etkinliği sil",
+    "deleteConfirm": "“{{title}}” silinsin mi? Bu işlem geri alınamaz.",
     "calendarColor": "Takvim rengi",
     "duplicate": "Çoğalt",
     "duplicated": "Etkinlik çoğaltıldı",

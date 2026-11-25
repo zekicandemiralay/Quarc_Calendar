@@ -17,6 +17,8 @@ const useUi = create((set, get) => ({
 
   // "This event / following / all" question for recurring events: { action, resolve } or null
   scopeAsk: null,
+  // "Delete …?" question before something that can't be undone: { title, message, confirmLabel, resolve } or null
+  confirmAsk: null,
 
   toasts: [],
 
@@ -38,6 +40,18 @@ const useUi = create((set, get) => ({
   answerScope(value) {
     const ask = get().scopeAsk;
     set({ scopeAsk: null });
+    ask?.resolve(value);
+  },
+
+  /** Ask before deleting. Resolves true only when the person presses the delete button. */
+  askConfirm: (message, opts = {}) =>
+    new Promise((resolve) => {
+      get().confirmAsk?.resolve(false); // a new question replaces an unanswered one
+      set({ confirmAsk: { message, ...opts, resolve } });
+    }),
+  answerConfirm(value) {
+    const ask = get().confirmAsk;
+    set({ confirmAsk: null });
     ask?.resolve(value);
   },
 

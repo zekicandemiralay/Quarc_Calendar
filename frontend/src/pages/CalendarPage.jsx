@@ -7,7 +7,7 @@ import Sidebar from '../components/Sidebar';
 import SyncBadge from '../components/SyncBadge';
 import SearchDialog from '../components/SearchDialog';
 import EventEditor from '../components/EventEditor';
-import { CalendarEditor, EventPreview, ScopeDialog } from '../components/Dialogs';
+import { CalendarEditor, ConfirmDialog, EventPreview, ScopeDialog } from '../components/Dialogs';
 import MonthView from '../views/MonthView';
 import TimeGridView from '../views/TimeGridView';
 import YearView from '../views/YearView';
@@ -228,6 +228,7 @@ export default function CalendarPage() {
       <EventPreview />
       <CalendarEditor />
       <ScopeDialog />
+      <ConfirmDialog />
       <SearchDialog />
     </div>
   );
