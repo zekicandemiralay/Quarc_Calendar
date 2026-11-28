@@ -52,7 +52,7 @@ async function pushOutbox() {
     });
 
     const sent = new Map(batch.map((m) => [m.key, m]));
-    await db.transaction('rw', db.events, db.calendars, db.outbox, async () => {
+    await db.transaction('rw', db.events, db.calendars, db.places, db.outbox, async () => {
       for (const r of results) {
         const key = `${r.table}:${r.id}`;
         const was = sent.get(key);
@@ -94,9 +94,10 @@ async function pullChanges() {
   for (;;) {
     const since = await getMeta('cursor', '');
     const data = await request(`/api/sync/pull?since=${encodeURIComponent(since)}`);
-    await db.transaction('rw', db.events, db.calendars, db.outbox, db.meta, async () => {
+    await db.transaction('rw', db.events, db.calendars, db.places, db.outbox, db.meta, async () => {
       await applyRows('calendars', data.calendars);
       await applyRows('events', data.events);
+      await applyRows('places', data.places || []); // older servers don't send places
       await setMeta('cursor', data.cursor);
     });
     if (!data.hasMore) return;

@@ -11,6 +11,8 @@ import { layoutSpans } from '../lib/layout';
 import { isMultiDay } from '../lib/recurrence';
 import { openNewEvent, textOn, useIsCompact } from '../lib/compose';
 import DayList from '../components/DayList';
+import { DayWeather } from '../components/Weather';
+import { useDaysWeather } from '../lib/weather/store';
 
 const HEADER_H = 28; // day-number row
 const LANE_H = 20;
@@ -47,6 +49,10 @@ export default function MonthView() {
     return rows;
   }, [date, fmt.weekStartsOn]);
 
+  const allDays = useMemo(() => weeks.flat(), [weeks]);
+  const wx = useDaysWeather(allDays);
+  const wxByDay = useMemo(() => new Map(wx.map((w, i) => [+allDays[i], w])), [wx, allDays]);
+
   const rangeStart = weeks[0][0];
   const rangeEnd = addDays(weeks[weeks.length - 1][6], 1);
   const occs = useOccurrences(rangeStart, rangeEnd);
@@ -76,6 +82,7 @@ export default function MonthView() {
             today={today}
             compact={compact}
             capacity={capacity}
+            wxByDay={wxByDay}
             onDayClick={(d) => {
               if (compact) setDate(d);
               else {
@@ -104,7 +111,7 @@ export default function MonthView() {
   );
 }
 
-function WeekRow({ week, occs, date, today, compact, capacity, onDayClick, onCreate, onOpen, onMore, fmt }) {
+function WeekRow({ week, occs, date, today, compact, capacity, wxByDay, onDayClick, onCreate, onOpen, onMore, fmt }) {
   const weekStart = week[0];
   const weekEnd = addDays(week[6], 1);
 
@@ -142,7 +149,7 @@ function WeekRow({ week, occs, date, today, compact, capacity, onDayClick, onCre
             onDoubleClick={() => !compact && onCreate(day)}
             className={`relative min-w-0 cursor-pointer overflow-hidden border-r border-neutral-200 last:border-r-0 dark:border-neutral-800 ${inMonth ? '' : 'bg-neutral-50/60 dark:bg-neutral-950/40'} ${selected ? 'bg-accent/5' : ''}`}
           >
-            <div className="flex h-7 items-center justify-center pt-1 sm:justify-start sm:px-2">
+            <div className="flex h-7 items-center justify-center gap-1 pt-1 sm:justify-between sm:px-2">
               <span
                 className={`flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-medium ${
                   isToday ? 'bg-accent text-white' : selected ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900' : inMonth ? '' : 'text-neutral-400'
@@ -150,7 +157,13 @@ function WeekRow({ week, occs, date, today, compact, capacity, onDayClick, onCre
               >
                 {day.getDate() === 1 && !compact ? fmt.f(day, 'd MMM') : day.getDate()}
               </span>
+              {!compact && <DayWeather w={wxByDay.get(+day)} date={day} size={22} className="min-w-0 px-1 text-xs" />}
             </div>
+            {compact && wxByDay.get(+day)?.day && (
+              <div className="pointer-events-none -mt-0.5 flex justify-center">
+                <DayWeather w={wxByDay.get(+day)} date={day} size={15} className="text-[9px] tracking-tight" />
+              </div>
+            )}
 
             {compact ? (
               <div className="flex flex-wrap justify-center gap-0.5 px-1 pt-0.5">

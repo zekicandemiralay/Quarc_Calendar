@@ -8,6 +8,8 @@ import { layoutDay, layoutSpans, snap, SNAP_MINUTES } from '../lib/layout';
 import { isMultiDay } from '../lib/recurrence';
 import { moveOccurrence, SCOPE } from '../lib/actions';
 import { openNewEvent, textOn, useIsCompact } from '../lib/compose';
+import { useDaysWeather } from '../lib/weather/store';
+import { DayWeather, HourWeather } from '../components/Weather';
 
 const HOUR_H = 52; // px per hour
 const GUTTER_W = 52;
@@ -34,6 +36,7 @@ export default function TimeGridView({ mode }) {
   }, [mode, date, fmt.weekStartsOn, compact]);
 
   const occs = useOccurrences(days[0], addDays(days[days.length - 1], 1));
+  const wx = useDaysWeather(days);
   const spanOccs = useMemo(() => occs.filter(isMultiDay), [occs]);
   const { segments, lanes } = useMemo(() => layoutSpans(spanOccs, days), [spanOccs, days]);
 
@@ -170,26 +173,32 @@ export default function TimeGridView({ mode }) {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Day headers */}
+      {/* Day headers (+ the day's weather) */}
       <div className="flex flex-shrink-0 border-b border-neutral-200 dark:border-neutral-800" style={{ paddingLeft: GUTTER_W }}>
-        {days.map((d) => {
+        {days.map((d, di) => {
           const isToday = isSameDay(d, now);
           return (
-            <button
-              key={+d}
-              onClick={() => {
-                setDate(d);
-                if (mode === 'week') setView('day');
-              }}
-              className="flex flex-1 flex-col items-center py-1.5 hover:bg-neutral-50 dark:hover:bg-neutral-900"
-            >
-              <span className={`text-[11px] font-medium uppercase tracking-wide ${isToday ? 'text-accent' : 'text-neutral-500'}`}>
-                {fmt.f(d, 'EEE')}
-              </span>
-              <span className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-lg font-medium ${isToday ? 'bg-accent text-white' : ''}`}>
-                {d.getDate()}
-              </span>
-            </button>
+            <div key={+d} className="flex min-w-0 flex-1 flex-col items-center pb-1">
+              <button
+                onClick={() => {
+                  setDate(d);
+                  if (mode === 'week') setView('day');
+                }}
+                className="flex w-full flex-col items-center pt-1.5 hover:bg-neutral-50 dark:hover:bg-neutral-900"
+              >
+                <span className={`text-[11px] font-medium uppercase tracking-wide ${isToday ? 'text-accent' : 'text-neutral-500'}`}>
+                  {fmt.f(d, 'EEE')}
+                </span>
+                <span className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-full text-lg font-medium ${isToday ? 'bg-accent text-white' : ''}`}>
+                  {d.getDate()}
+                </span>
+              </button>
+              {wx.length > 0 && (
+                <div className="flex h-6 items-center">
+                  <DayWeather w={wx[di]} date={d} size={22} className="px-1 text-xs" />
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -239,6 +248,8 @@ export default function TimeGridView({ mode }) {
                 {h > 0 && (
                   <span className="absolute -top-2 right-2 text-[10px] text-neutral-400">{fmt.hour(h)}</span>
                 )}
+                {/* Day view: the hour's forecast sits next to its label */}
+                {days.length === 1 && wx[0] && <HourWeather v={wx[0].hour(h)} className="absolute right-1.5 top-2" />}
               </div>
             ))}
           </div>
@@ -262,6 +273,11 @@ export default function TimeGridView({ mode }) {
                   onPointerDown={(e) => onColumnPointerDown(e, di)}
                   onClick={(e) => onColumnClick(e, di)}
                 >
+                  {/* Several days: each hour's forecast in the corner of its slot, under any events */}
+                  {days.length > 1 && wx[di] &&
+                    hours.map((h) => (
+                      <HourWeather key={h} v={wx[di].hour(h)} className="absolute right-1" style={{ top: h * HOUR_H + 3 }} />
+                    ))}
                   {dayColumns[di].map(({ occ, top, height, col, cols }) => {
                     const dragging = drag && drag.occKey === occ.key;
                     const dTop = dragging && drag.mode === 'move' ? drag.dMin : 0;

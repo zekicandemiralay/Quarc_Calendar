@@ -124,4 +124,29 @@ describe('offline-first sync', async () => {
     expect(remote.calendars.find((c) => c.id === extra.id).is_deleted).toBe(1);
     expect(remote.events.filter((e) => e.calendar_id === extra.id).every((e) => e.is_deleted === 1)).toBe(true);
   });
+
+  it('syncs weather places (a trip) offline-first, both ways', async () => {
+    const { savePlace, deletePlace } = await import('../data');
+    online = false;
+    const trip = await savePlace({ name: 'Berlin', detail: 'Germany', latitude: 52.52437, longitude: 13.41053, start_date: '2026-12-03', end_date: '2026-12-07' });
+    expect(trip.latitude).toBe(52.5244); // stored coarsely
+    await syncNow();
+    expect((await serverPull()).places).toHaveLength(0);
+    online = true;
+    await syncNow();
+    expect((await serverPull()).places.map((p) => p.name)).toEqual(['Berlin']);
+
+    // added on the phone -> shows up here
+    await realFetch(`${base}/api/sync/push`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ mutations: [{ table: 'places', id: 'place-phone-1', op: 'upsert', client_updated_at: new Date().toISOString(),
+        data: { name: 'Rome', detail: 'Italy', latitude: 41.89, longitude: 12.48, start_date: '2027-01-10', end_date: '2027-01-12' } }] }),
+    });
+    await syncNow();
+    expect((await db.places.get('place-phone-1')).name).toBe('Rome');
+
+    await deletePlace(trip.id);
+    await syncNow();
+    expect((await serverPull()).places.find((p) => p.id === trip.id).is_deleted).toBe(1);
+  });
 });

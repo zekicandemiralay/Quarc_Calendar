@@ -8,7 +8,10 @@ import Dexie from 'dexie';
 //                       is_deleted = 1, so deletions can sync)
 //   outbox              one pending mutation per row, keyed 'table:id'. A
 //                       later edit of the same row replaces the earlier entry.
+//   places              synced weather locations for ranges of days (trips)
 //   meta                small key/value store: sync cursor, owning user id...
+//   weather             cached forecasts (not synced, refetched when stale), so
+//                       the weather still shows offline
 export const db = new Dexie('quarc-calendar');
 
 db.version(1).stores({
@@ -16,6 +19,11 @@ db.version(1).stores({
   calendars: 'id, is_deleted',
   outbox: 'key',
   meta: 'key',
+});
+
+db.version(2).stores({
+  places: 'id, is_deleted',
+  weather: 'key',
 });
 
 export async function getMeta(key, fallback = null) {
@@ -28,5 +36,7 @@ export function setMeta(key, value) {
 }
 
 export async function clearLocalData() {
-  await Promise.all([db.events.clear(), db.calendars.clear(), db.outbox.clear(), db.meta.clear()]);
+  await Promise.all([
+    db.events.clear(), db.calendars.clear(), db.places.clear(), db.outbox.clear(), db.meta.clear(), db.weather.clear(),
+  ]);
 }

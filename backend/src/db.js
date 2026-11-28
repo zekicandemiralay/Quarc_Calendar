@@ -60,6 +60,25 @@ function initDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_events_user_updated ON events(user_id, updated_at);
     CREATE INDEX IF NOT EXISTS idx_events_calendar ON events(calendar_id);
+
+    -- Weather location for a range of days (e.g. a trip): days start_date..end_date
+    -- (inclusive, local YYYY-MM-DD) show this place's weather instead of the
+    -- device's default location.
+    CREATE TABLE IF NOT EXISTS places (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT '',
+      detail TEXT NOT NULL DEFAULT '',
+      latitude REAL NOT NULL,
+      longitude REAL NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      client_updated_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_places_user_updated ON places(user_id, updated_at);
   `);
 }
 

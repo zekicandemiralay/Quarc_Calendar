@@ -6,6 +6,8 @@ import useFmt from '../lib/useFmt';
 import { useOccurrences } from '../lib/hooks';
 import { isMultiDay } from '../lib/recurrence';
 import Icon from '../components/Icons';
+import { DayWeather } from '../components/Weather';
+import { useDaysWeather } from '../lib/weather/store';
 
 const DAYS_AHEAD = 90;
 
@@ -38,6 +40,9 @@ export default function AgendaView() {
     return [...map.values()].sort((a, b) => a.day - b.day);
   }, [occs, +start]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const groupDays = useMemo(() => groups.map((g) => g.day), [groups]);
+  const wx = useDaysWeather(groupDays);
+
   const today = new Date();
   if (!groups.length) {
     return (
@@ -51,14 +56,15 @@ export default function AgendaView() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl px-4 py-4">
-        {groups.map(({ day, items }) => (
+        {groups.map(({ day, items }, gi) => (
           <section key={+day} className="flex gap-4 border-b border-neutral-200 py-3 last:border-0 dark:border-neutral-800">
+            <div className="flex w-14 flex-shrink-0 flex-col items-center gap-1">
             <button
               onClick={() => {
                 setDate(day);
                 setView('day');
               }}
-              className="w-14 flex-shrink-0 text-center"
+              className="w-full text-center"
             >
               <div className={`text-[11px] font-medium uppercase ${isSameDay(day, today) ? 'text-accent' : 'text-neutral-500'}`}>{fmt.f(day, 'EEE')}</div>
               <div className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-lg font-medium ${isSameDay(day, today) ? 'bg-accent text-white' : ''}`}>
@@ -66,6 +72,8 @@ export default function AgendaView() {
               </div>
               <div className="text-[11px] text-neutral-400">{fmt.f(day, 'MMM')}</div>
             </button>
+            <DayWeather w={wx[gi]} date={day} size={20} className="px-1 py-0.5 text-[11px]" />
+            </div>
             <ul className="min-w-0 flex-1 space-y-1">
               {items.map((o) => (
                 <li key={o.key + +day}>

@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { startOfDay } from 'date-fns';
-import useSettings from './settingsStore';
+import useSettings, { initialView } from './settingsStore';
 
 // Transient UI state: what's being viewed, which dialogs are open, toasts.
 const useUi = create((set, get) => ({
-  view: useSettings.getState().defaultView,
+  view: initialView(useSettings.getState()),
   date: startOfDay(new Date()),
   sidebarOpen: false, // mobile drawer
   searchOpen: false,
@@ -14,6 +14,7 @@ const useUi = create((set, get) => ({
   // Read-only detail card for an occurrence: { occ, anchor: {x,y} } or null
   preview: null,
   calendarEditor: null, // { calendar } | { calendar: null } for new
+  weatherDialog: null, // { date?: Date } — weather locations, optionally focused on one day
 
   // "This event / following / all" question for recurring events: { action, resolve } or null
   scopeAsk: null,
@@ -22,7 +23,11 @@ const useUi = create((set, get) => ({
 
   toasts: [],
 
-  setView: (view) => set({ view }),
+  setView(view) {
+    set({ view });
+    // Remembered so the app reopens in the same view next time.
+    if (useSettings.getState().lastView !== view) useSettings.getState().update({ lastView: view });
+  },
   setDate: (date) => set({ date: startOfDay(date) }),
   goToday: () => set({ date: startOfDay(new Date()) }),
   setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
@@ -34,6 +39,8 @@ const useUi = create((set, get) => ({
   closePreview: () => set({ preview: null }),
   openCalendarEditor: (calendarEditor) => set({ calendarEditor }),
   closeCalendarEditor: () => set({ calendarEditor: null }),
+  openWeatherDialog: (weatherDialog = {}) => set({ weatherDialog, preview: null }),
+  closeWeatherDialog: () => set({ weatherDialog: null }),
 
   /** Ask which part of a recurring series an action applies to. Resolves to a SCOPE value or null (cancelled). */
   askScope: (action) => new Promise((resolve) => set({ scopeAsk: { action, resolve } })),

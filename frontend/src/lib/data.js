@@ -68,6 +68,26 @@ export async function saveEvents(list) {
   for (const ev of list) await saveEvent(ev);
 }
 
+// ---- Weather places (a location for a range of days) ----------------------------
+
+/** place: { name, detail, latitude, longitude, start_date, end_date } (dates YYYY-MM-DD, inclusive) */
+export function savePlace(place) {
+  return write('places', {
+    ...place,
+    id: place.id || uuid(),
+    created_at: place.created_at || nowIso(),
+    latitude: Math.round(place.latitude * 1e4) / 1e4,
+    longitude: Math.round(place.longitude * 1e4) / 1e4,
+    is_deleted: 0,
+  });
+}
+
+export async function deletePlace(id) {
+  const existing = await db.places.get(id);
+  if (!existing) return;
+  await write('places', { ...existing, is_deleted: 1 }, 'delete');
+}
+
 // ---- Calendars ---------------------------------------------------------------
 
 export const saveCalendar = (cal) => write('calendars', { ...cal, is_deleted: 0 });

@@ -6,6 +6,7 @@ import useSettings, { applyTheme } from './store/settingsStore';
 import { setAuthLostHandler, startSyncLoop, syncNow } from './lib/sync';
 import { ensureDefaultCalendar } from './lib/data';
 import { startReminders } from './lib/reminders';
+import { startWeather } from './lib/weather/store';
 import Login from './pages/Login';
 import CalendarPage from './pages/CalendarPage';
 import Settings from './pages/Settings';
@@ -54,9 +55,11 @@ export default function App() {
     // After the first sync attempt (online or not), a brand-new account gets its default calendar.
     syncNow().finally(() => ensureDefaultCalendar(user).catch(() => {}));
     const stopReminders = startReminders(t);
+    const stopWeather = startWeather();
     return () => {
       stopSync();
       stopReminders();
+      stopWeather();
     };
   }, [user, t]);
 

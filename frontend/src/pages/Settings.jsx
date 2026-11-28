@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../components/Icons';
 import { inputCls } from '../components/Modal';
 import useAuthStore from '../store/authStore';
-import useSettings from '../store/settingsStore';
+import useSettings, { VIEWS } from '../store/settingsStore';
 import useUi from '../store/uiStore';
 import { apiUrl } from '../lib/apiUrl';
 import { db } from '../lib/db';
@@ -264,10 +264,34 @@ export default function Settings() {
               <option value="12">12 h (AM/PM)</option>
             </select>
           </Field>
-          <Field label={t('settings.defaultView')}>
-            <select value={settings.defaultView} onChange={(e) => settings.update({ defaultView: e.target.value })} className={selectCls}>
-              {['day', 'week', 'month', 'year', 'agenda'].map((v) => <option key={v} value={v}>{t(`views.${v}`)}</option>)}
+          <Field label={t('settings.startView')}>
+            <select value={settings.startView} onChange={(e) => settings.update({ startView: e.target.value })} className={selectCls}>
+              <option value="last">{t('settings.lastUsed')}</option>
+              {VIEWS.map((v) => <option key={v} value={v}>{t(`views.${v}`)}</option>)}
             </select>
+          </Field>
+        </Section>
+
+        <Section title={t('settings.weather')}>
+          <Field label={t('weather.show')}>
+            <input type="checkbox" checked={settings.weatherEnabled} onChange={(e) => settings.update({ weatherEnabled: e.target.checked })} className="h-4 w-4 accent-[#e5484d]" />
+          </Field>
+          <Field label={t('settings.tempUnit')}>
+            <select value={settings.tempUnit} onChange={(e) => settings.update({ tempUnit: e.target.value })} className={selectCls}>
+              <option value="C">°C</option>
+              <option value="F">°F</option>
+            </select>
+          </Field>
+          <Field label={t('settings.weatherLocations')} hint={t('settings.weatherLocationsHint')}>
+            <button
+              onClick={() => {
+                navigate('/');
+                useUi.getState().openWeatherDialog({});
+              }}
+              className="flex items-center gap-2 rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+            >
+              <Icon name="pin" size={16} /> {t('weather.title')}
+            </button>
           </Field>
         </Section>
 

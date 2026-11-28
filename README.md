@@ -12,6 +12,8 @@ iOS (as a PWA), just like Quarc Music and Quarc Notes.
 - All-day and multi-day events, location, description, per-event colour
 - Repeating events: daily / weekly (pick weekdays) / monthly / yearly, every N, ends never / on a date / after N times — edit or delete **this event**, **this and following**, or **all**
 - Reminders (several per event) as in-app toasts and system notifications, which also fire offline
+- Weather: current temperature in the top bar, hourly forecast in day / week view, daily high / low in month and agenda view; past days show the recorded weather. Uses the device's location (or a fixed place), and you can set a different place for specific days (trips), synced across devices. Fetched straight from Open-Meteo, so it works without the Quarc server and is cached for offline use
+- Reopens in the view you used last (or a fixed one, see Settings)
 - Search across everything on the device, mini-month navigator, keyboard shortcuts (`t` today · `j`/`k` or arrows · `d w m y a` views · `c` new · `/` search)
 - Import / export `.ics` (Google, Apple, Outlook)
 - English and Türkçe, light / dark / system theme, Monday/Sunday/Saturday week start, 12/24 h

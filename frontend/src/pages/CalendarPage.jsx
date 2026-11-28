@@ -5,6 +5,8 @@ import { addDays, addMonths, addYears, endOfWeek, startOfWeek } from 'date-fns';
 import Icon from '../components/Icons';
 import Sidebar from '../components/Sidebar';
 import SyncBadge from '../components/SyncBadge';
+import { CurrentWeather } from '../components/Weather';
+import WeatherDialog from '../components/WeatherDialog';
 import SearchDialog from '../components/SearchDialog';
 import EventEditor from '../components/EventEditor';
 import { CalendarEditor, ConfirmDialog, EventPreview, ScopeDialog } from '../components/Dialogs';
@@ -13,11 +15,11 @@ import TimeGridView from '../views/TimeGridView';
 import YearView from '../views/YearView';
 import AgendaView from '../views/AgendaView';
 import useUi from '../store/uiStore';
+import { VIEWS } from '../store/settingsStore';
 import useFmt from '../lib/useFmt';
 import { isCompactNow, openNewEvent, useIsCompact } from '../lib/compose';
 import { getPlatform, getCurrentVersion, fetchLatestRelease, getDownloadUrl, installUpdate, semverGt } from '../lib/updateCheck';
 
-const VIEWS = ['day', 'week', 'month', 'year', 'agenda'];
 
 function step(view, date, dir) {
   switch (view) {
@@ -32,18 +34,20 @@ function step(view, date, dir) {
 // `compact` only forces a re-render when the breakpoint flips; the title itself reads it directly.
 // eslint-disable-next-line no-unused-vars
 function useTitle(view, date, fmt, compact) {
+  const phone = isCompactNow(); // the phone header also holds the weather: keep titles short there
   switch (view) {
-    case 'day': return fmt.f(date, 'EEEE, d MMMM yyyy');
+    case 'day': return fmt.f(date, phone ? 'EEE d MMM' : 'EEEE, d MMMM yyyy');
     case 'week': {
-      const compact = isCompactNow();
+      const compact = phone;
       const s = compact ? date : startOfWeek(date, { weekStartsOn: fmt.weekStartsOn });
       const e = compact ? addDays(date, 2) : endOfWeek(date, { weekStartsOn: fmt.weekStartsOn });
+      if (compact) return s.getMonth() === e.getMonth() ? `${fmt.f(s, 'd')}–${fmt.f(e, 'd MMM')}` : `${fmt.f(s, 'd MMM')}–${fmt.f(e, 'd MMM')}`;
       if (s.getMonth() === e.getMonth()) return `${fmt.f(s, 'd')} – ${fmt.f(e, 'd MMMM yyyy')}`;
       if (s.getFullYear() === e.getFullYear()) return `${fmt.f(s, 'd MMM')} – ${fmt.f(e, 'd MMM yyyy')}`;
       return `${fmt.f(s, 'd MMM yyyy')} – ${fmt.f(e, 'd MMM yyyy')}`;
     }
     case 'year': return fmt.f(date, 'yyyy');
-    default: return fmt.f(date, 'MMMM yyyy');
+    default: return fmt.f(date, phone ? 'MMM yyyy' : 'MMMM yyyy');
   }
 }
 
@@ -98,7 +102,7 @@ export default function CalendarPage() {
         return;
       }
       const ui = useUi.getState();
-      if (ui.editor || ui.preview || ui.calendarEditor || ui.scopeAsk || ui.searchOpen) return;
+      if (ui.editor || ui.preview || ui.calendarEditor || ui.scopeAsk || ui.searchOpen || ui.weatherDialog || ui.confirmAsk) return;
       const k = e.key.toLowerCase();
       const map = { d: 'day', w: 'week', m: 'month', y: 'year', a: 'agenda' };
       if (map[k]) setView(map[k]);
@@ -148,7 +152,7 @@ export default function CalendarPage() {
             <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 lg:hidden" aria-label={t('nav.menu')}>
               <Icon name="menu" size={20} />
             </button>
-            <button onClick={goToday} className="rounded-lg border border-neutral-300 px-3 py-1.5 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800">
+            <button onClick={goToday} className="rounded-lg border border-neutral-300 px-2.5 py-1.5 sm:px-3 text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800">
               {t('nav.today')}
             </button>
             <div className="hidden sm:flex">
@@ -161,6 +165,7 @@ export default function CalendarPage() {
             </div>
             <h1 className="min-w-0 flex-1 truncate text-base font-semibold sm:text-xl">{title}</h1>
 
+            <CurrentWeather />
             <SyncBadge />
             <button onClick={() => setSearchOpen(true)} className="rounded-full p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800" aria-label={t('search.title')} title={`${t('search.title')} (/)`}>
               <Icon name="search" size={20} />
@@ -227,6 +232,7 @@ export default function CalendarPage() {
       <EventEditor />
       <EventPreview />
       <CalendarEditor />
+      <WeatherDialog />
       <ScopeDialog />
       <ConfirmDialog />
       <SearchDialog />

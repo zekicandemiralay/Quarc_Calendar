@@ -38,4 +38,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Weather for the current location. Coarse (city-level) is all the weather needs; fine is declared
+         too because Android treats them as one runtime permission group (same as Quarc Weather). -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 </manifest>

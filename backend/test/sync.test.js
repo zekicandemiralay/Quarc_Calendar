@@ -70,6 +70,32 @@ const cookie = (id) => `token=${jwt.sign({ id, username: id, role: 'user' }, 'te
   assert.strictEqual(r.json.calendars[0].is_deleted, 1);
   assert.strictEqual(r.json.events[0].is_deleted, 1);
 
+  // Weather places: validated, synced, owner-only, deletable.
+  const place = (id, data, ts = '2026-03-01T00:00:00.000Z') => ({
+    table: 'places', id, op: 'upsert', client_updated_at: ts,
+    data: { name: 'Berlin', detail: 'Germany', latitude: 52.52, longitude: 13.4, start_date: '2026-12-03', end_date: '2026-12-07', ...data },
+  });
+  r = await call('/api/sync/push', 'alice', { mutations: [
+    place('plc-00001', {}),
+    place('plc-00002', { latitude: 200 }),
+    place('plc-00003', { start_date: '2026-12-09', end_date: '2026-12-08' }),
+    place('plc-00004', { start_date: 'tomorrow' }),
+  ] });
+  assert.deepStrictEqual(r.json.results.map((x) => x.status), ['ok', 'invalid', 'invalid', 'invalid']);
+  r = await call('/api/sync/pull?since=', 'alice');
+  assert.strictEqual(r.json.places.length, 1);
+  assert.strictEqual(r.json.places[0].name, 'Berlin');
+  assert.strictEqual(r.json.places[0].latitude, 52.52);
+  const placeCursor = r.json.cursor;
+  r = await call('/api/sync/pull?since=', 'bob');
+  assert.strictEqual(r.json.places.length, 0, 'places are private');
+  r = await call('/api/sync/push', 'bob', { mutations: [place('plc-00001', {}, '2030-01-01T00:00:00.000Z')] });
+  assert.strictEqual(r.json.results[0].status, 'forbidden');
+  r = await call('/api/sync/push', 'alice', { mutations: [{ table: 'places', id: 'plc-00001', op: 'delete', client_updated_at: '2026-03-02T00:00:00.000Z' }] });
+  assert.strictEqual(r.json.results[0].status, 'ok');
+  r = await call('/api/sync/pull?since=' + encodeURIComponent(placeCursor), 'alice');
+  assert.strictEqual(r.json.places[0].is_deleted, 1);
+
   // Paging: > 1000 rows come back in pages that together cover everything once.
   const many = Array.from({ length: 500 }, (_, i) => ev('page-' + String(i).padStart(5, '0'), { data: { calendar_id: 'cal-00009' } }));
   for (let i = 0; i < 3; i++) {

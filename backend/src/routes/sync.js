@@ -13,6 +13,7 @@ const jsonText = (v, fallback) => {
   return text.length > 20000 ? fallback : text;
 };
 const validId = (v) => typeof v === 'string' && /^[A-Za-z0-9_-]{8,64}$/.test(v);
+const validDate = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 const validIso = (v) => typeof v === 'string' && v.length >= 10 && v.length <= 40 && !Number.isNaN(Date.parse(v));
 
 // Rows are sent to the client with JSON columns parsed and flags as 0/1.
@@ -25,9 +26,11 @@ function outEvent(r) {
   };
 }
 
+const TABLES = ['calendars', 'events', 'places'];
+
 // Pull: everything for this user changed after the `since` cursor. Paged so a
 // first sync of a large calendar doesn't produce one huge response; when a
-// page is full, both tables are cut at the same boundary and `hasMore` tells
+// page is full, every table is cut at the same boundary and `hasMore` tells
 // the client to ask again from the returned cursor.
 router.get('/pull', (req, res) => {
   const db = getDb();
@@ -38,27 +41,23 @@ router.get('/pull', (req, res) => {
       .prepare(`SELECT * FROM ${table} WHERE user_id = ? AND updated_at > ? ORDER BY updated_at ASC LIMIT ?`)
       .all(req.user.id, since, PAGE_LIMIT + 1);
 
-  let calendars = q('calendars');
-  let events = q('events');
+  const rows = Object.fromEntries(TABLES.map((t) => [t, q(t)]));
 
   let bound = null;
   let hasMore = false;
-  for (const rows of [calendars, events]) {
-    if (rows.length > PAGE_LIMIT) {
+  for (const list of Object.values(rows)) {
+    if (list.length > PAGE_LIMIT) {
       hasMore = true;
-      const last = rows[PAGE_LIMIT - 1].updated_at;
+      const last = list[PAGE_LIMIT - 1].updated_at;
       if (bound === null || last < bound) bound = last;
     }
   }
-  if (hasMore) {
-    calendars = calendars.filter((r) => r.updated_at <= bound);
-    events = events.filter((r) => r.updated_at <= bound);
-  }
+  if (hasMore) for (const t of TABLES) rows[t] = rows[t].filter((r) => r.updated_at <= bound);
 
-  const all = [...calendars, ...events];
+  const all = TABLES.flatMap((t) => rows[t]);
   const cursor = hasMore ? bound : all.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), since);
 
-  res.json({ cursor, hasMore, calendars, events: events.map(outEvent) });
+  res.json({ cursor, hasMore, calendars: rows.calendars, events: rows.events.map(outEvent), places: rows.places });
 });
 
 function upsertCalendar(db, user, m, existing) {
@@ -116,8 +115,32 @@ function upsertEvent(db, user, m, existing) {
   }
 }
 
+function placeValues(d) {
+  const lat = Number(d.latitude);
+  const lon = Number(d.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  if (!validDate(d.start_date) || !validDate(d.end_date) || d.end_date < d.start_date) return null;
+  return [str(d.name, 200).trim() || '?', str(d.detail, 300), lat, lon, d.start_date, d.end_date];
+}
+
+function upsertPlace(db, user, m, existing, vals) {
+  const now = nowIso();
+  if (existing) {
+    db.prepare(
+      `UPDATE places SET name = ?, detail = ?, latitude = ?, longitude = ?, start_date = ?, end_date = ?,
+         is_deleted = 0, client_updated_at = ?, updated_at = ? WHERE id = ?`
+    ).run(...vals, m.client_updated_at, now, m.id);
+  } else {
+    db.prepare(
+      `INSERT INTO places (id, user_id, name, detail, latitude, longitude, start_date, end_date,
+         client_updated_at, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(m.id, user.id, ...vals, m.client_updated_at, validIso(m.data?.created_at) ? m.data.created_at : now, now);
+  }
+}
+
 // Push: queued client edits. Each mutation is
-//   { table: 'events'|'calendars', id, op: 'upsert'|'delete', data, client_updated_at }
+//   { table: 'events'|'calendars'|'places', id, op: 'upsert'|'delete', data, client_updated_at }
 // Last write wins by client_updated_at: if the server already holds a newer
 // edit of the same row (made from another device), the mutation is answered
 // with status 'stale' plus the server's row, which the client adopts. That
@@ -129,7 +152,7 @@ router.post('/push', (req, res) => {
 
   const apply = db.transaction(() => {
     for (const m of mutations) {
-      const table = m?.table === 'calendars' ? 'calendars' : m?.table === 'events' ? 'events' : null;
+      const table = TABLES.includes(m?.table) ? m.table : null;
       if (!table || !validId(m.id) || !validIso(m.client_updated_at)) {
         results.push({ table: m?.table, id: m?.id, status: 'invalid' });
         continue;
@@ -162,7 +185,14 @@ router.post('/push', (req, res) => {
       }
 
       if (table === 'calendars') upsertCalendar(db, req.user, m, existing);
-      else {
+      else if (table === 'places') {
+        const vals = placeValues(m.data || {});
+        if (!vals) {
+          results.push({ table, id: m.id, status: 'invalid' });
+          continue;
+        }
+        upsertPlace(db, req.user, m, existing, vals);
+      } else {
         const d = m.data || {};
         if (!validIso(d.start) || !validId(d.calendar_id)) {
           results.push({ table, id: m.id, status: 'invalid' });

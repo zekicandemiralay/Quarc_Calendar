@@ -5,6 +5,9 @@ import useFmt from '../lib/useFmt';
 import { useOccurrences } from '../lib/hooks';
 import { isMultiDay } from '../lib/recurrence';
 import { openNewEvent } from '../lib/compose';
+import { useMemo } from 'react';
+import { useDaysWeather } from '../lib/weather/store';
+import { DayWeather } from './Weather';
 
 /** Compact list of one day's events (used under the phone month grid). */
 export default function DayList({ day }) {
@@ -13,14 +16,24 @@ export default function DayList({ day }) {
   const openPreview = useUi((s) => s.openPreview);
   const start = startOfDay(day);
   const occs = useOccurrences(start, addDays(start, 1));
+  const days = useMemo(() => [start], [+start]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [w] = useDaysWeather(days);
 
   return (
     <div className="p-3">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{fmt.f(day, 'EEEE, d MMMM')}</h3>
+        <div className="flex min-w-0 items-center gap-2">
+          <h3 className="truncate text-sm font-semibold">{fmt.f(day, 'EEE d MMM')}</h3>
+          {w?.day && (
+            <span className="flex min-w-0 items-center gap-1 text-xs text-neutral-500">
+              <DayWeather w={w} date={start} size={18} className="px-1 py-0.5 text-xs" />
+              <span className="truncate">{w.loc?.name}</span>
+            </span>
+          )}
+        </div>
         <button
           onClick={() => openNewEvent(new Date(start.getTime() + 9 * 3600000))}
-          className="rounded-full px-3 py-1 text-xs font-medium text-accent hover:bg-accent/10"
+          className="flex-shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium text-accent hover:bg-accent/10"
         >
           + {t('event.new')}
         </button>

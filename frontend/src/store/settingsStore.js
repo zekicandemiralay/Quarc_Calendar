@@ -7,13 +7,33 @@ const DEFAULTS = {
   theme: 'dark', // 'light' | 'dark' | 'system'
   weekStartsOn: 1, // 0 Sunday, 1 Monday, 6 Saturday
   timeFormat: 'auto', // 'auto' | '12' | '24'
-  defaultView: 'week', // 'day' | 'week' | 'month' | 'year' | 'agenda'
+  startView: 'last', // 'last' (whatever was open last time) | 'day' | 'week' | 'month' | 'year' | 'agenda'
+  lastView: 'week',
   defaultDuration: 60, // minutes
   defaultReminder: 10, // minutes before, or null for none
   showWeekNumbers: false,
   notifications: true,
   hiddenCalendars: [], // ids the user has toggled off on this device
+
+  // Weather
+  weatherEnabled: true,
+  tempUnit: 'C', // 'C' | 'F'
+  // The default weather location on this device: null = follow the device's
+  // current location, or a fixed place { name, detail, latitude, longitude }.
+  // Synced per-day places (trips) override it for their dates.
+  weatherHome: null,
+  // Last good location fix { latitude, longitude, name, detail, at }, so the
+  // weather shows straight away (and offline) before a new fix arrives.
+  lastPosition: null,
 };
+
+export const VIEWS = ['day', 'week', 'month', 'year', 'agenda'];
+
+/** The view to open the app in. */
+export function initialView(s) {
+  const v = s.startView === 'last' ? s.lastView : s.startView;
+  return VIEWS.includes(v) ? v : 'week';
+}
 
 function load() {
   try {
